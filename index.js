@@ -1,28 +1,30 @@
+require('dotenv').config()
 const express = require("express");
+const sequelize = require('./db')
 const bodyParser = require("body-parser");
-const projects = require("./data/projects").projects;
-
 const app = express();
+const router = require('./routes/index')
 
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
+app.use('/api', router)
 
-app.get("/api", (req, res) => {
-  const searchValue = (req.query.value || "").toLowerCase();
-  let filtred = projects.filter(({ title, description }) => {
-    return (
-      searchValue === "" ||
-      title.toLowerCase().includes(searchValue) ||
-      description.toLowerCase().includes(searchValue)
-    );
-  });
-  res.json({ filtred });
-});
 
-app.post("/auth", (req, res) => {
-  req.body.login === "admin" && req.body.password === "1234"
-    ? res.send(true)
-    : res.send(false);
-});
 
-app.listen(5000, () => console.log("Runned on 5000 port"));
+// app.post("/auth", (req, res) => {
+//   req.body.login === "admin" && req.body.password === "1234" ? res.send(true)
+//     : res.send(false);
+// });
+
+const start = async() => {
+  try{
+    await sequelize.authenticate()
+    await sequelize.sync()
+    app.listen(process.env.PORT, () => console.log(`Runned on ${process.env.PORT} port`));
+
+  }catch(e){
+
+  }
+}
+
+start()
