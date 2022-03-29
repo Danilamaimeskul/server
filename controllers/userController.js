@@ -1,45 +1,58 @@
 const {User} = require('../models/models')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const userService = require('../service/userService')
+const {validationResult} = require('express-validator')
 const ApiError = require('../error/apiError')
 
 
-generateJWT = (login) => {
-    return jwt.sign({login}, process.env.JWT_KEY)
-}
 class UserController {
-    async signup(req, res){
-        const {login, password, firstName, lastName, age} = req.body
-        // Валидацию сделать нада 
-        const sameUser = await User.findOne({where: {login}})
-        if(sameUser){
-            //Ашипка, такой юзер уже был придуман
-            return next(ApiError.badRequest('Пользователь с таким email уже существует'))
+ 
+    async signup(req, res, next) {
+        try{
+            const errors = validationResult(req)
+            if(!errors.isEmpty()){
+                return next(ApiError.BadRequest('Ошибка при валидации', errors.array()))
+            }
+            const {login, password, firstName, lastName, age} = req.body
+            const userData = await userService.signup(login, password, firstName, lastName, age)
+            res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true})
+            return res.json(userData)
+        }catch(e){
+            next(e)
         }
-        const hashPassword = await bcrypt.hash(password, 5)
-        const user = await User.create({login, password: hashPassword, firstName, lastName, age})
-        const token = generateJWT(login)
-        return res.json({token})
+    }
+    async login(req, res, next) {
+        try{
+            const {login, password} = req.body
+            const userData = await userService.login(login, password)
+            res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true})
+            return res.json(userData)
+        }catch(e){
+            next(e)
+        }
+    }
+    async logout(req, res, next) {
+        try{
+            const {refreshToken} = req.headers.cookie;
+            res.clearCookie('refreshToken')
+            return res.json(refreshToken)
+        }catch(e){
+            next(e)
+        }
+    }
+    async refresh (req, res, next) {
+        try{
+            const {refreshToken} = req.headers.cookie;
+            const userData = await userService.refresh(refreshToken)
+            res.cookie('refreshToken', userData.refreshToken, {maxAge: 30 * 24 * 60 * 60 * 1000, httpOnly: true})
+            return res.json(userData)
+        }catch(e){
+            next(e)
+        }
     }
 
-    async login(req, res, next){
-        const {login, password} = req.body
-        const user = await User.findOne({where: {login}})
-        if(!user){
-            return next(ApiError.internal('Пользователь не найден'))
-        }
-        let comparePassword = bcrypt.compareSync(password, user.password)
-        if(!comparePassword){
-            return next(ApiError.internal('Указан неверный пароль'))
-        }
-        const token = generateJWT(login)
-        return res.json({token})
-    }
-
-    async check(req, res){
-        const token = generateJWT(req.user.login)
-        return res.json(token)
-    }
+   
 }
 
 module.exports = new UserController()
