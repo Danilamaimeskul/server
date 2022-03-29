@@ -13,10 +13,7 @@ app.use(express.json())
 app.use('/api', router)
 
 
-app.post("/auth", (req, res) => {
-  req.body.login === "admin" && req.body.password === "1234" ? res.send(true)
-    : res.send(false);
-});
+
 
 const start = async() => {
   try{
