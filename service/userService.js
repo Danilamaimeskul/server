@@ -41,11 +41,11 @@ class UserService {
 
     async refresh(refreshToken){
         if(!refreshToken){
-            throw ApiError.UnauthorizedError()
+            throw ApiError.UnauthorizedError('unauthorized user')
         }
         const userData = tokenService.validateRefreshToken(refreshToken);
         if(!userData){
-            throw ApiError.UnauthorizedError()
+            throw ApiError.UnauthorizedError('unauthorized user')
         }
         const user = await User.findOne({where: {login: userData.login}});
         const userDto = new UserDto(user);
