@@ -3,14 +3,18 @@ const express = require("express");
 const sequelize = require('./db')
 const bodyParser = require("body-parser");
 const app = express();
-const router = require('./routes/index')
 const cors = require('cors')
+const router = require('./routes/index')
 const cookieParser = require("cookie-parser")
 const errorMiddleware = require('./middleware/ErrorMiddleware')
 
+
+app.use(cors({
+  credentials: true,
+  origin: process.env.CLIENT_URL
+}));
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors())
 app.use(express.json())
 app.use('/api', router)
 app.use(cookieParser());

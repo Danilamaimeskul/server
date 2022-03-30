@@ -6,7 +6,7 @@ const ApiError = require('../error/apiError')
 
 class UserService {
 
-    async signup (login, password, firstName, lastName, age){
+    async signup (login, password, repeatPassword, firstName, lastName, age){
         const sameUser = await User.findOne({where: {login}})
         if(sameUser){
             throw ApiError.BadRequest(`Пользователь с таким логином ${login} уже существует`)
@@ -40,14 +40,14 @@ class UserService {
     }
 
     async refresh(refreshToken){
-        if(!refreshToken){
-            throw ApiError.UnauthorizedError('unauthorized user')
-        }
-        const userData = tokenService.validateRefreshToken(refreshToken);
-        if(!userData){
-            throw ApiError.UnauthorizedError('unauthorized user')
-        }
-        const user = await User.findOne({where: {login: userData.login}});
+         if(!refreshToken){
+             throw ApiError.UnauthorizedError('unauthorized user1')
+         }
+         const userData = tokenService.validateRefreshToken(refreshToken);
+         if(!userData){
+             throw ApiError.UnauthorizedError('unauthorized user2')
+         }
+         const user = await User.findOne({where: {login: userData.login}});
         const userDto = new UserDto(user);
         const tokens = tokenService.generateTokens({...userDto});
         return {...tokens, user: userDto}
